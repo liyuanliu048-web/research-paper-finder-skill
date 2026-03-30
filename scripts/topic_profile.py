@@ -30,6 +30,25 @@ def slug_label(text: str) -> str:
     return text[:48] or "query"
 
 
+def interleave_terms(*groups: list[str], limit: int | None = None) -> list[str]:
+    mixed: list[str] = []
+    seen: set[str] = set()
+    max_len = max((len(group) for group in groups), default=0)
+    for index in range(max_len):
+        for group in groups:
+            if index >= len(group):
+                continue
+            term = clean_text(group[index])
+            key = term.lower()
+            if not term or key in seen:
+                continue
+            seen.add(key)
+            mixed.append(term)
+            if limit is not None and len(mixed) >= limit:
+                return mixed
+    return mixed
+
+
 @dataclass(frozen=True)
 class SeedWork:
     label: str = ""
@@ -229,9 +248,10 @@ def build_query_blocks(profile: TopicProfile, limit: int = 24) -> list[QueryBloc
     if len(core_terms) >= 2:
         add("core", " ".join(core_terms[:2]), "core_blend")
 
-    branch_terms = mechanism_terms + context_terms + method_terms + theory_terms
-    for core_term in (core_terms[:3] or [profile.topic_name]):
-        for branch_term in branch_terms[:8]:
+    branch_terms = interleave_terms(mechanism_terms, method_terms, context_terms, theory_terms, limit=8)
+    primary_core_terms = core_terms[:3] or ([profile.topic_name] if profile.topic_name else [])
+    for branch_term in branch_terms:
+        for core_term in primary_core_terms:
             add("branch", f"{core_term} {branch_term}", f"{core_term}_{branch_term}")
 
     for author in profile.seed_authors[:4]:

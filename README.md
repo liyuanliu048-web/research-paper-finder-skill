@@ -8,8 +8,9 @@ A Codex skill for building broad, traceable, deduplicated research-paper candida
 
 - turn a topic into structured search inputs
 - search OpenAlex, Semantic Scholar, and arXiv
-- expand coverage with seed authors and seed works
-- follow citation links for broader recall
+- run broad and focused passes when needed
+- expand coverage with seed authors and verified seed works
+- follow citation links without drifting too far off topic
 - deduplicate records by DOI and normalized title
 - export JSON-first outputs for later screening or reading
 
@@ -83,7 +84,8 @@ python scripts/find_papers.py \
 
 Useful flags:
 
-- `--skip-citation-expansion` for a faster first pass
+- `--skip-citation-expansion` for a faster first pass or method-heavy topics
+- `--allow-auto-backref-seeds` to opt into backward-reference expansion without verified seed works
 - `--json-only` to skip XLSX, RIS, and Markdown views
 - `--prefix` to separate multiple runs in one folder
 
@@ -104,6 +106,9 @@ The script writes:
 - OpenAlex is the primary structured source.
 - Semantic Scholar can hit rate limits during larger runs.
 - arXiv is included mainly for preprint coverage.
+- Put the most precise core and method terms first in `topic_profile.json`.
+- For lexical-noise-prone topics, use a broad baseline run and then a focused rerun.
+- Backward-reference expansion now stays conservative unless verified seed works exist or you opt in.
 - Specialist databases may still need manual follow-up.
 - This skill builds a candidate pool, not a final inclusion list.
 

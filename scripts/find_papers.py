@@ -80,6 +80,11 @@ def parse_args() -> argparse.Namespace:
         help="Skip forward-citation and backward-reference expansion for a faster first pass.",
     )
     parser.add_argument(
+        "--allow-auto-backref-seeds",
+        action="store_true",
+        help="Allow backward-reference expansion from auto-selected hits when no verified seed works are supplied.",
+    )
+    parser.add_argument(
         "--json-only",
         action="store_true",
         help="Write only JSON outputs and skip XLSX, RIS, and Markdown derivatives.",
@@ -714,6 +719,10 @@ def main() -> None:
         access_notes.append(
             "Manual follow-up still needed for unsupported databases: " + ", ".join(profile.unsupported_databases)
         )
+    if not args.skip_citation_expansion and not profile.seed_works and not args.allow_auto_backref_seeds:
+        access_notes.append(
+            "Automatic backward-reference expansion was skipped because no verified seed works were supplied."
+        )
 
     seed_openalex_ids: dict[str, str] = {}
     for seed in profile.seed_works:
@@ -823,40 +832,52 @@ def main() -> None:
                     {"label": f"oa_cites:{label}", "source": "OpenAlex", "raw": 0, "kept": 0, "note": f"failed: {exc}"}
                 )
 
-        recent_backref_seeds = choose_recent_backref_seeds(list(candidate_pool.values()), profile)
-        fetched_backref_ids: set[str] = set()
-        for seed in recent_backref_seeds:
-            raw = 0
-            kept_before = len(candidate_pool)
-            try:
-                seed_item = openalex_work_by_id(seed.openalex_id)
-                for ref_id in (seed_item.get("referenced_works") or [])[:40]:
-                    short_id = clean_text(ref_id).rsplit("/", 1)[-1]
-                    if not short_id or short_id in fetched_backref_ids:
-                        continue
-                    fetched_backref_ids.add(short_id)
-                    raw += 1
-                    try:
-                        ref_item = openalex_work_by_id(short_id)
-                        add_candidate(candidate_pool, build_openalex_record(ref_item, f"oa_backref:{seed.openalex_id}"), profile)
-                    except Exception:
-                        continue
-                kept_after = len(candidate_pool)
-                delta = max(kept_after - kept_before, 0)
-                raw_kept_counter += delta
-                query_logs.append(
-                    {
-                        "label": f"oa_backref:{seed.openalex_id}",
-                        "source": "OpenAlex",
-                        "raw": raw,
-                        "kept": delta,
-                        "note": seed.title[:80],
-                    }
-                )
-            except Exception as exc:
-                query_logs.append(
-                    {"label": f"oa_backref:{seed.openalex_id}", "source": "OpenAlex", "raw": 0, "kept": 0, "note": f"failed: {exc}"}
-                )
+        should_expand_backrefs = bool(profile.seed_works) or args.allow_auto_backref_seeds
+        if should_expand_backrefs:
+            recent_backref_seeds = choose_recent_backref_seeds(list(candidate_pool.values()), profile)
+            fetched_backref_ids: set[str] = set()
+            for seed in recent_backref_seeds:
+                raw = 0
+                kept_before = len(candidate_pool)
+                try:
+                    seed_item = openalex_work_by_id(seed.openalex_id)
+                    for ref_id in (seed_item.get("referenced_works") or [])[:40]:
+                        short_id = clean_text(ref_id).rsplit("/", 1)[-1]
+                        if not short_id or short_id in fetched_backref_ids:
+                            continue
+                        fetched_backref_ids.add(short_id)
+                        raw += 1
+                        try:
+                            ref_item = openalex_work_by_id(short_id)
+                            add_candidate(candidate_pool, build_openalex_record(ref_item, f"oa_backref:{seed.openalex_id}"), profile)
+                        except Exception:
+                            continue
+                    kept_after = len(candidate_pool)
+                    delta = max(kept_after - kept_before, 0)
+                    raw_kept_counter += delta
+                    query_logs.append(
+                        {
+                            "label": f"oa_backref:{seed.openalex_id}",
+                            "source": "OpenAlex",
+                            "raw": raw,
+                            "kept": delta,
+                            "note": seed.title[:80],
+                        }
+                    )
+                except Exception as exc:
+                    query_logs.append(
+                        {"label": f"oa_backref:{seed.openalex_id}", "source": "OpenAlex", "raw": 0, "kept": 0, "note": f"failed: {exc}"}
+                    )
+        elif candidate_pool:
+            query_logs.append(
+                {
+                    "label": "oa_backref_auto_seeding",
+                    "source": "OpenAlex",
+                    "raw": 0,
+                    "kept": 0,
+                    "note": "skipped: no verified seed works; rerun with --allow-auto-backref-seeds to opt in",
+                }
+            )
 
     deduped_records = list(candidate_pool.values())
     deduped_records.sort(key=lambda rec: (-(rec.relevance_score), -(rec.year or 0), rec.title.lower()))

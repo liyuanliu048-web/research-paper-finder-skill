@@ -10,9 +10,11 @@
 
 1. Treat `keyword_slots.phenomenon` and `keyword_slots.synonyms` as the recall core.
 2. Treat `mechanisms`, `contexts`, `methods`, and `theories` as branch-expansion terms.
-3. Build mixed query blocks by combining a small number of core and branch terms.
-4. Add author blocks from `seed_authors`.
-5. Use `seed_works` for exact anchor recovery and citation expansion.
+3. Order terms by expected precision because capped runs give the earliest terms the most exposure.
+4. Build mixed query blocks by combining a small number of core and branch terms.
+5. For assay-heavy topics, put reporter, substrate, or measurement terms before generic biology labels.
+6. Add author blocks from `seed_authors`.
+7. Use `seed_works` for exact anchor recovery and citation expansion.
 
 ## Search Sources
 
@@ -23,10 +25,12 @@
 ## Expansion Strategy
 
 1. Run broad topic and branch queries first.
-2. Recover each verified seed work through OpenAlex and, when possible, Semantic Scholar.
-3. Add forward citations from seed works.
-4. Select strong recent hits and pull backward references from OpenAlex.
-5. Keep source tracking for every addition.
+2. If the first pass is noisy, build a second focused profile and rerun with tighter method or reporter terms.
+3. Recover each verified seed work through OpenAlex and, when possible, Semantic Scholar.
+4. Add forward citations from seed works.
+5. Pull backward references only from verified seed works by default.
+6. Opt in to auto-selected backward-reference seeds only when you explicitly want more recall and accept more drift.
+7. Keep source tracking for every addition.
 
 ## Deduplication Rules
 
@@ -46,5 +50,6 @@
 - Structured APIs do not cover every database or every document type.
 - Abstract coverage can be incomplete.
 - Rate limiting can interrupt some calls, especially on Semantic Scholar.
+- arXiv can return genuine zero-hit runs for narrow assay queries, so distinguish zero results from transport failures.
 - Some domains still need manual supplements from specialist indexes.
 - This workflow is for candidate harvesting, not final inclusion decisions.

@@ -17,6 +17,8 @@ If the user gives only a natural-language topic, derive this JSON before running
 - Fill `keyword_slots.methods` with methods that matter for discovery or later screening.
 - Fill `keyword_slots.theories` with theory labels, anchor authors, or canonical constructs.
 - Fill `keyword_slots.exclusions` with obvious noise terms and false-friend meanings.
+- Order entries by expected value. Earlier `phenomenon`, `synonyms`, `mechanisms`, and `methods` terms receive more query exposure under capped runs.
+- For assay, probe, or reporter topics, place the assay chemistry or reporter format before generic biology labels.
 - Fill `seed_authors` only with real authors who are genuinely central to the topic.
 - Fill `seed_works` only with verified works. Prefer DOI, OpenAlex ID, Semantic Scholar ID, or arXiv ID when available.
 - Fill `preferred_databases` with structured sources to search automatically. This skill supports `openalex`, `semantic_scholar`, and `arxiv`.
