@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Paper Finder"
+  short_description: "Find and deduplicate research papers"
+  default_prompt: "Use $research-paper-finder to build a topic profile, search OpenAlex, Semantic Scholar, and arXiv, and export a deduplicated paper set."

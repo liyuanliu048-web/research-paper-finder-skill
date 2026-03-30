@@ -1,0 +1,28 @@
+{
+  "topic_name": "",
+  "research_goal": "",
+  "date_range": {
+    "recent_start": 2020,
+    "recent_end": 2026,
+    "include_classics_before_recent": true
+  },
+  "keyword_slots": {
+    "phenomenon": [],
+    "synonyms": [],
+    "mechanisms": [],
+    "contexts": [],
+    "methods": [],
+    "theories": [],
+    "exclusions": []
+  },
+  "seed_authors": [],
+  "seed_works": [],
+  "preferred_databases": [
+    "openalex",
+    "semantic_scholar",
+    "arxiv"
+  ],
+  "include_rules": [],
+  "priority_rules": [],
+  "exclude_rules": []
+}
